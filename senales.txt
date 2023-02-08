@@ -1,0 +1,13 @@
+def reg (x):
+    y_list=[]
+    if type(x) == list:
+        for i in x:
+            y = -227*i + 1768.2
+            y_list.append(y)
+        return (y_list)
+    else:
+        y = -227 * x + 1768.2
+
+content=[2.5,0.3]
+
+print(reg(content))
