@@ -3,3 +3,7 @@ Este archivo es creado para practicar el manejo de los repositorios.
 
 Alejandra Erazo 201821038
 Juliana Mendoza 201822235
+
+Modificación de la prueba 2
+
+:)
