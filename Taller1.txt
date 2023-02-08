@@ -1,0 +1,154 @@
+## Alejandra Erazo Navas 201821038
+#  Juliana Mendoza Chirinos 201822235
+
+## Se importan las librerias necesarias
+from pgmpy.models import BayesianNetwork
+from pgmpy.factors.discrete import TabularCPD
+from pgmpy.inference import VariableElimination
+
+## PUNTO 1: EL PROBLEMA DE MONTY HALL
+
+# Se define el modelo
+# Se define la red bayesiana
+model = BayesianNetwork([("U", "A"), ("C", "A")])
+
+# Se definen las variables aleatorias C y U
+cpd_c = TabularCPD(variable="C", variable_card=3, values=[[0.33], [0.33], [0.33]])
+cpd_u = TabularCPD(variable="U", variable_card=3, values=[[0.33], [0.33], [0.33]])
+# Se define la variable aleatoria A
+cpd_a = TabularCPD(
+    variable="A",
+    variable_card=3,
+    values=[
+        [0, 0, 0, 0, 0.5, 1, 0, 1, 0.5],
+        [0.5, 0, 1, 0, 0, 0, 1, 0, 0.5],
+        [0.5, 1, 0, 1, 0.5, 0, 0, 0, 0],
+    ],
+    evidence=["C", "U"],
+    evidence_card=[3, 3],
+)
+
+# Se asocian las CPDs al modelo
+model.add_cpds(cpd_c, cpd_u, cpd_a)
+# Se revisa el modelo
+model.check_model()
+infer = VariableElimination(model)
+
+# Caso de U y A
+# Se calculan las diferentes probabilidades
+# Yo escogi puerta 1 y animador puerta 2
+posterior_p = infer.query(["C"], evidence={"U": 0, "A": 1})
+print("U:1, A:2\n" , posterior_p)
+# Yo escogi puerta 1 y animador puerta 3
+posterior_p = infer.query(["C"], evidence={"U": 0, "A": 2})
+print("U:1, A:3\n", posterior_p)
+# Yo escogi puerta 2 y animador puerta 1
+posterior_p = infer.query(["C"], evidence={"U": 1, "A": 0})
+print("U:2, A:1\n", posterior_p)
+# Yo escogi puerta 2 y animador puerta 3
+posterior_p = infer.query(["C"], evidence={"U": 1, "A": 2})
+print("U:2, A:3\n", posterior_p)
+# Yo escogi puerta 3 y animador puerta 1
+posterior_p = infer.query(["C"], evidence={"U": 2, "A": 0})
+print("U:3, A:1\n", posterior_p)
+# Yo escogi puerta 3 y animador puerta 2
+posterior_p = infer.query(["C"], evidence={"U": 2, "A": 1})
+print("U:3, A:2\n", posterior_p)
+
+
+# Caso de U
+# Se calculan las diferentes probabilidades
+# Yo escogi puerta 1
+posterior_p = infer.query(["C"], evidence={"U": 0})
+print("U:1\n" , posterior_p)
+# Yo escogi puerta 2
+posterior_p = infer.query(["C"], evidence={"U": 1})
+print("U:2\n" , posterior_p)
+# Yo escogi puerta 3
+posterior_p = infer.query(["C"], evidence={"U": 2})
+print("U:3\n" , posterior_p)
+
+
+# Caso de A
+# Se calculan las diferentes probabilidades
+# El animador escogió puerta 1
+posterior_p = infer.query(["C"], evidence={"A": 0})
+print("A:1\n" , posterior_p)
+# El animador escogió puerta 2
+posterior_p = infer.query(["C"], evidence={"A": 1})
+print("A:2\n" , posterior_p)
+# El animador escogió puerta 3
+posterior_p = infer.query(["C"], evidence={"A": 2})
+print("A:3\n" , posterior_p)
+
+## PUNTO 2: EL PROBLEMA DE LA ALARMA ANTIRROBO
+
+# Se define el modelo
+# Se define la red bayesiana
+model = BayesianNetwork([("R", "A"), ("S", "A"), ("A", "J"), ("A", "M")])
+
+# Se definen las variables aleatorias
+cpd_r = TabularCPD(variable="R", variable_card=2, values=[[0.01], [0.99]])
+cpd_s = TabularCPD(variable="S", variable_card=2, values=[[0.02], [0.98]])
+
+cpd_a = TabularCPD(variable="A", variable_card=2, values=[[0.95, 0.94, 0.29, 0.001],
+                                                          [0.05, 0.06, 0.71, 0.999],],evidence=["R", "S"],
+                                                           evidence_card=[2, 2])
+
+cpd_j = TabularCPD(variable="J", variable_card=2, values=[[0.9, 0.05],
+                                                          [0.1, 0.95]],evidence=["A"],
+                                                           evidence_card=[2])
+
+cpd_m = TabularCPD(variable="M", variable_card=2, values=[[0.7, 0.01],
+                                                          [0.3, 0.99]],evidence=["A"],
+                                                           evidence_card=[2])
+# Se asocian las CPDs al modelo
+model.add_cpds(cpd_r, cpd_s, cpd_a, cpd_j, cpd_m)
+# Se revisa el modelo
+model.check_model()
+infer = VariableElimination(model)
+# Se imprimen las independencias
+print (model.get_independencies())
+
+# Se evalúan los casos
+#Ambos llaman
+posterior_p = infer.query(["R"], evidence={"J": 0, "M": 0})
+print("J:V, M:V \n", posterior_p)
+#Solo llama Juan
+posterior_p = infer.query(["R"], evidence={"J": 0, "M": 1})
+print("J:V, M:F \n", posterior_p)
+#Solo llama María
+posterior_p = infer.query(["R"], evidence={"J": 1, "M": 0})
+print("J:F, M:V \n", posterior_p)
+#Ninguno llama
+posterior_p = infer.query(["R"], evidence={"J": 1, "M": 1})
+print("J:F, M:F \n", posterior_p)
+
+
+#Juan y María llaman con la misma probabilidad cuando A:F
+# Se ajusta el modelo
+model2 = BayesianNetwork([("R", "A"), ("S", "A"), ("A", "J"), ("A", "M")])
+cpd_j2 = TabularCPD(variable="J", variable_card=2, values=[[0.9, 0.01],
+                                                          [0.1, 0.99]],evidence=["A"],
+                                                           evidence_card=[2])
+
+model2.add_cpds(cpd_r, cpd_s, cpd_a, cpd_j2, cpd_m)
+model2.check_model()
+infer2 = VariableElimination(model2)
+
+
+# Se evalúan los casos
+#Ambos llaman
+posterior_p = infer2.query(["R"], evidence={"J": 0, "M": 0})
+print("J:V, M:V \n", posterior_p)
+#Solo llama Juan
+posterior_p = infer2.query(["R"], evidence={"J": 0, "M": 1})
+print("J:V, M:F \n", posterior_p)
+#Solo llama María
+posterior_p = infer2.query(["R"], evidence={"J": 1, "M": 0})
+print("J:F, M:V \n", posterior_p)
+#Ninguno llama
+posterior_p = infer2.query(["R"], evidence={"J": 1, "M": 1})
+print("J:F, M:F \n", posterior_p)
+
+
